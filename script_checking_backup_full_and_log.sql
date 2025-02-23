@@ -24,6 +24,7 @@ create table #dbresult (BANCO varchar(128),
 			 STATUS_BKP_LOG VARCHAR(64)) 
 
 -- Insere os bancos de dados na tabela temporário #db
+-- Put all databases in a table temp #db	
 insert into #db
     select name from master..sysdatabases
     where name not in ('tempdb')
@@ -35,6 +36,7 @@ begin
     select top 1 @db =  nome from #db
 
     -- Armazena a data do ultimo backup full nas variaveis
+    -- Store in a last backup full in the variable.
     select    @bkpIni = MAX(backup_start_date),
             @bkpFin = MAX(backup_finish_date)
     from backupset
@@ -51,8 +53,10 @@ begin
         end
     if (DATABASEPROPERTYEX(@db, 'Recovery') != 'SIMPLE') -- Verifica o tipo de recovery model
     begin -- Bloco de instrucoes para bancos em recovery model full ou bulk-logged
+	  -- That instructions block for a database in recovery model full or bluk-logged.
 
         -- Se o banco fizer backup de log ele armazena a data do último backup de log
+	-- If a database did any backup log and he stored a last backup log.
         select    @bkpIni_log = MAX(backup_start_date),
                 @bkpFin_log = MAX(backup_finish_date)
         from backupset
@@ -69,13 +73,15 @@ begin
             end
 
         -- Conta quantos backups de log foram feitos desde o ultimo backup full
+	-- How many log backup was did that of last backup.
         select @num_log = count(backup_start_date)
         from backupset
         where database_name = @db
             and type = 'L'
             and backup_start_date > @bkpFin
 
-        -- Insere todas as informacoes na tabela temporária #dbresult
+        -- coloca todas as informacoes na tabela temporária #dbresult
+	-- put all information in a temp table #dbresult.
         insert into #dbresult
         select @db as BANCO, 
             @bkpIni as BACKUP_FULL_START, 
